@@ -85,45 +85,43 @@ module.exports.AAssets = AAssets;
 /**
  * Preload using XHRLoader for any type of asset.
  */
-registerElement('a-asset-item', {
-  prototype: Object.create(ANode.prototype, {
-    createdCallback: {
-      value: function () {
-        this.data = null;
-        this.isAssetItem = true;
-      }
-    },
+class AAssetsItem extends ANode {
+  constructor(...args) {
+    const self = super(...args); //https://github.com/WebReflection/document-register-element#v1-caveat
+    self.data = null;
+    self.isAssetItem = true;
+    return self;
+  }
 
-    attachedCallback: {
-      value: function () {
-        var self = this;
-        var src = this.getAttribute('src');
-        fileLoader.setResponseType(
-          this.getAttribute('response-type') || inferResponseType(src));
-        fileLoader.load(src, function handleOnLoad (response) {
-          self.data = response;
-          /*
-            Workaround for a Chrome bug. If another XHR is sent to the same url before the
-            previous one closes, the second request never finishes.
-            setTimeout finishes the first request and lets the logic triggered by load open
-            subsequent requests.
-            setTimeout can be removed once the fix for the bug below ships:
-            https://bugs.chromium.org/p/chromium/issues/detail?id=633696&q=component%3ABlink%3ENetwork%3EXHR%20&colspec=ID%20Pri%20M%20Stars%20ReleaseBlock%20Component%20Status%20Owner%20Summary%20OS%20Modified
-          */
-          setTimeout(function load () { ANode.prototype.load.call(self); });
-        }, function handleOnProgress (xhr) {
-          self.emit('progress', {
-            loadedBytes: xhr.loaded,
-            totalBytes: xhr.total,
-            xhr: xhr
-          });
-        }, function handleOnError (xhr) {
-          self.emit('error', {xhr: xhr});
+  connectedCallback() {
+    var self = this;
+    var src = this.getAttribute('src');
+    fileLoader.setResponseType(
+      this.getAttribute('response-type') || inferResponseType(src));
+      fileLoader.load(src, function handleOnLoad (response) {
+        self.data = response;
+        /*
+        Workaround for a Chrome bug. If another XHR is sent to the same url before the
+        previous one closes, the second request never finishes.
+        setTimeout finishes the first request and lets the logic triggered by load open
+        subsequent requests.
+        setTimeout can be removed once the fix for the bug below ships:
+        https://bugs.chromium.org/p/chromium/issues/detail?id=633696&q=component%3ABlink%3ENetwork%3EXHR%20&colspec=ID%20Pri%20M%20Stars%20ReleaseBlock%20Component%20Status%20Owner%20Summary%20OS%20Modified
+        */
+        setTimeout(function load () { ANode.prototype.load.call(self); });
+      }, function handleOnProgress (xhr) {
+        self.emit('progress', {
+          loadedBytes: xhr.loaded,
+          totalBytes: xhr.total,
+          xhr: xhr
         });
-      }
+      }, function handleOnError (xhr) {
+        self.emit('error', {xhr: xhr});
+      });
     }
-  })
-});
+}
+registerElement('a-asset-item', AAssetsItem);
+
 
 /**
  * Create a Promise that resolves once the media element has finished buffering.
