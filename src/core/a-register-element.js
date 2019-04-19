@@ -35,10 +35,20 @@ module.exports.isNode = function (node) {
 
 /**
  * @param {string} tagName - The name of the tag to register.
+ * @param {Class} constructor - Constructor for the new custom element.
+ */
+function registerElement(tagName, constructor) {
+  console.log('registerElement', tagName, constructor);
+
+  window.customElements.define(tagName, constructor);
+}
+module.exports.registerElement = registerElement;
+/**
+ * @param {string} tagName - The name of the tag to register.
  * @param {object} obj - The prototype of the new element.
  * @returns {object} The prototype of the new element.
  */
-module.exports.registerElement = function (tagName, obj) {
+const registerElementOLD = function (tagName, obj) {
   var proto = Object.getPrototypeOf(obj.prototype);
   var newObj = obj;
   var isANode = ANode && proto === ANode.prototype;
@@ -71,13 +81,22 @@ module.exports.registerElement = function (tagName, obj) {
     }
   });
 
+
+  // v0 returns a constructor function from `var Mytag = document.registerElement(tagName, prototypeToExtend)``
+  // Example use: `document.body.appendChild(new Mytag());``
+  return document.registerElement(tagName, newObj);
+  // v1 requires the constructor to register the element,
+  // Example use: customElements.define(tagName, Mytag);
   // return window.customElements.define(tagName, newObj);
-  window.customElements.define(tagName, function(...args) {
-    let self = Reflect.construct(HTMLElement, [], newObj.prototype);
-    console.log('CUSTOM SELF', self);
-    return self;
-  });
-  return newObj;
+
+
+  // first attempt:
+  // window.customElements.define(tagName, function(...args) {
+  //   let self = Reflect.construct(HTMLElement, [], newObj.prototype);
+  //   console.log('CUSTOM SELF', self);
+  //   return self;
+  // });
+  // return newObj;
 }
 
 /**
