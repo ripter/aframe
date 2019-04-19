@@ -8,7 +8,8 @@ var registerPrimitive = require('../primitives').registerPrimitive;
 var utils = require('../../../utils/');
 
 // For testing.
-var meshPrimitives = module.exports = {};
+var meshPrimitives = {};
+// var meshPrimitives = module.exports = {};
 
 // Generate primitive for each geometry type.
 geometryNames.forEach(function registerMeshPrimitive (geometryName) {
@@ -23,12 +24,19 @@ geometryNames.forEach(function registerMeshPrimitive (geometryName) {
 
   // Register.
   var tagName = 'a-' + geometryHyphened;
+  console.log('%cCreating primitive', 'background-color: #7FDBFF;', tagName, utils.extendDeep({}, getMeshMixin(), {
+    defaultComponents: {geometry: {primitive: geometryName}},
+    mappings: mappings
+  }));
   var primitive = registerPrimitive(tagName, utils.extendDeep({}, getMeshMixin(), {
     defaultComponents: {geometry: {primitive: geometryName}},
     mappings: mappings
   }));
+  console.log('%cCreated', 'background-color: #0074D9;', tagName, primitive);
   meshPrimitives[tagName] = primitive;
 });
+console.log('meshPrimitives', meshPrimitives);
+module.exports = meshPrimitives;
 
 /**
  * camelCase to hyphened-string.

@@ -13,7 +13,7 @@
 */
 
 // Polyfill `document.registerElement`.
-require('document-register-element');
+// require('document-register-element');
 
 var ANode;  // Must declare before AEntity. Initialized at the bottom.
 var AEntity;
@@ -44,6 +44,11 @@ module.exports.registerElement = function (tagName, obj) {
   var isANode = ANode && proto === ANode.prototype;
   var isAEntity = AEntity && proto === AEntity.prototype;
 
+  // console.group('registerElement');
+  // console.log('proto', proto);
+  // console.log('isANode', isANode);
+  // console.log('isAEntity', isAEntity);
+  // console.groupEnd();
   if (isANode || isAEntity) { addTagName(tagName); }
 
   // Wrap if element inherits from `ANode`.
@@ -66,8 +71,14 @@ module.exports.registerElement = function (tagName, obj) {
     }
   });
 
-  return document.registerElement(tagName, newObj);
-};
+  // return window.customElements.define(tagName, newObj);
+  window.customElements.define(tagName, function(...args) {
+    let self = Reflect.construct(HTMLElement, [], newObj.prototype);
+    console.log('CUSTOM SELF', self);
+    return self;
+  });
+  return newObj;
+}
 
 /**
  * Wrap some obj methods to call those on `ANode` base prototype.

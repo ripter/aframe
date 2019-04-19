@@ -10,83 +10,77 @@ var warn = debug('core:a-assets:warn');
 /**
  * Asset management system. Handles blocking on asset loading.
  */
-module.exports = registerElement('a-assets', {
-  prototype: Object.create(ANode.prototype, {
-    createdCallback: {
-      value: function () {
-        this.isAssets = true;
-        this.fileLoader = fileLoader;
-        this.timeout = null;
-      }
-    },
+class AAssets extends ANode {
+  constructor(...args) {
+    const self = super(...args); //https://github.com/WebReflection/document-register-element#v1-caveat
+    self.isAssets = true;
+    self.fileLoader = fileLoader;
+    self.timeout = null;
+    return self;
+  }
 
-    attachedCallback: {
-      value: function () {
-        var self = this;
-        var i;
-        var loaded = [];
-        var mediaEl;
-        var mediaEls;
-        var imgEl;
-        var imgEls;
-        var timeout;
+  connectedCallback() {
+    var self = this;
+    var i;
+    var loaded = [];
+    var mediaEl;
+    var mediaEls;
+    var imgEl;
+    var imgEls;
+    var timeout;
 
-        if (!this.parentNode.isScene) {
-          throw new Error('<a-assets> must be a child of a <a-scene>.');
-        }
-
-        // Wait for <img>s.
-        imgEls = this.querySelectorAll('img');
-        for (i = 0; i < imgEls.length; i++) {
-          imgEl = fixUpMediaElement(imgEls[i]);
-          loaded.push(new Promise(function (resolve, reject) {
-            // Set in cache because we won't be needing to call three.js loader if we have.
-            // a loaded media element.
-            THREE.Cache.files[imgEls[i].getAttribute('src')] = imgEl;
-            imgEl.onload = resolve;
-            imgEl.onerror = reject;
-          }));
-        }
-
-        // Wait for <audio>s and <video>s.
-        mediaEls = this.querySelectorAll('audio, video');
-        for (i = 0; i < mediaEls.length; i++) {
-          mediaEl = fixUpMediaElement(mediaEls[i]);
-          if (!mediaEl.src && !mediaEl.srcObject) {
-            warn('Audio/video asset has neither `src` nor `srcObject` attributes.');
-          }
-          loaded.push(mediaElementLoaded(mediaEl));
-        }
-
-        // Trigger loaded for scene to start rendering.
-        Promise.all(loaded).then(bind(this.load, this));
-
-        // Timeout to start loading anyways.
-        timeout = parseInt(this.getAttribute('timeout'), 10) || 3000;
-        this.timeout = setTimeout(function () {
-          if (self.hasLoaded) { return; }
-          warn('Asset loading timed out in ', timeout, 'ms');
-          self.emit('timeout');
-          self.load();
-        }, timeout);
-      }
-    },
-
-    detachedCallback: {
-      value: function () {
-        if (this.timeout) { clearTimeout(this.timeout); }
-      }
-    },
-
-    load: {
-      value: function () {
-        ANode.prototype.load.call(this, null, function waitOnFilter (el) {
-          return el.isAssetItem && el.hasAttribute('src');
-        });
-      }
+    if (!this.parentNode.isScene) {
+      throw new Error('<a-assets> must be a child of a <a-scene>.');
     }
-  })
-});
+
+    // Wait for <img>s.
+    imgEls = this.querySelectorAll('img');
+    for (i = 0; i < imgEls.length; i++) {
+      imgEl = fixUpMediaElement(imgEls[i]);
+      loaded.push(new Promise(function (resolve, reject) {
+        // Set in cache because we won't be needing to call three.js loader if we have.
+        // a loaded media element.
+        THREE.Cache.files[imgEls[i].getAttribute('src')] = imgEl;
+        imgEl.onload = resolve;
+        imgEl.onerror = reject;
+      }));
+    }
+
+    // Wait for <audio>s and <video>s.
+    mediaEls = this.querySelectorAll('audio, video');
+    for (i = 0; i < mediaEls.length; i++) {
+      mediaEl = fixUpMediaElement(mediaEls[i]);
+      if (!mediaEl.src && !mediaEl.srcObject) {
+        warn('Audio/video asset has neither `src` nor `srcObject` attributes.');
+      }
+      loaded.push(mediaElementLoaded(mediaEl));
+    }
+
+    // Trigger loaded for scene to start rendering.
+    Promise.all(loaded).then(bind(this.load, this));
+
+    // Timeout to start loading anyways.
+    timeout = parseInt(this.getAttribute('timeout'), 10) || 3000;
+    this.timeout = setTimeout(function () {
+      if (self.hasLoaded) { return; }
+      warn('Asset loading timed out in ', timeout, 'ms');
+      self.emit('timeout');
+      self.load();
+    }, timeout);
+  }
+
+  disconnectedCallback() {
+    if (this.timeout) { clearTimeout(this.timeout); }
+  }
+
+  load() {
+    ANode.prototype.load.call(this, null, function waitOnFilter (el) {
+      return el.isAssetItem && el.hasAttribute('src');
+    });
+  }
+}
+registerElement('a-assets', AAssets);
+module.exports.AAssets = AAssets;
 
 /**
  * Preload using XHRLoader for any type of asset.

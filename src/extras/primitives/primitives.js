@@ -19,6 +19,7 @@ module.exports.registerPrimitive = function registerPrimitive (name, definition)
     warn("The 'defaultAttributes' object is deprecated. Use 'defaultComponents' instead.");
   }
 
+  console.log('calling registerPrimitive', name, definition);
   var primitive = registerElement(name, {
     prototype: Object.create(AEntity.prototype, {
       defaultComponentsFromPrimitive: {
@@ -156,6 +157,7 @@ module.exports.registerPrimitive = function registerPrimitive (name, definition)
       }
     })
   });
+  console.log('Created primitive', primitive);
 
   // Store.
   primitives[name] = primitive;
